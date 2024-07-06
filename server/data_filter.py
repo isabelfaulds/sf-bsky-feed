@@ -37,7 +37,7 @@ def operations_callback(ops: defaultdict) -> None:
         sf_coded = [item for sublist in sf_coded.values() for item in sublist]
 
 
-        if any([w in record.text.lower() for w in sf_coded['name']]):
+        if any([w in record.text.lower() for w in sf_coded]):
             reply_root = reply_parent = None
             if record.reply:
                 reply_root = record.reply.root.uri

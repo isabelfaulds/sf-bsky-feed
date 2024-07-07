@@ -22,11 +22,11 @@ resource "aws_iam_role" "ec2_ssm_role" {
     Version = "2012-10-17",
     Statement = [
       {
-        Action = "sts:AssumeRole",
         Effect = "Allow",
         Principal = {
           Service = "ec2.amazonaws.com"
         }
+        Action = "sts:AssumeRole",
       }
     ]
   })
@@ -40,6 +40,7 @@ resource "aws_iam_policy" "ssm_policy" {
     Statement = [
       {
         Action = [
+          "ec2:DescribeAddresses",
           "ssm:GetParameter",
           "ssm:GetParameters",
           "ssm:GetParametersByPath"
@@ -179,7 +180,22 @@ resource "aws_security_group" "feed_server_sg" {
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  } 
+
+    ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
+
+# http traffic for testing
+  ingress {
+    from_port   = 8000
+    to_port     = 8000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  } 
 
 # ec2 access to internet ie pip install
   egress {
@@ -210,16 +226,25 @@ resource "aws_instance" "feed_server" {
               #!/bin/bash
               sudo yum update -y
               sudo amazon-linux-extras install -y python3.8
-              sudo yum install -y httpd git
+              sudo yum install -y httpd git aws-cli
 
               git clone https://github.com/manyshapes/sf-bsky-feed /home/ec2-user/sf-bsky-feed
-              cd /home/ec2-user/sf-bsky-feed
+              # May be out of date, referncing aws
+              eip=$(aws ec2 describe-addresses --filters "Name=instance-id,Values=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)" --query "Addresses[0].PublicIp" --output text --region us-west-1)
+              if grep -q "HOSTNAME=" /home/ec2-user/sf-bsky-feed/.env; then
+                sed -i "s/HOSTNAME=.*/HOSTNAME=$eip/" /home/ec2-user/sf-bsky-feed/.env
+              else
+                echo "HOSTNAME=$eip" >> /home/ec2-user/sf-bsky-feed/.env
+              fi
 
+              cd /home/ec2-user/sf-bsky-feed
               sudo python3.8 -m venv venv
               source venv/bin/activate
               sudo /home/ec2-user/sf-bsky-feed/venv/bin/python3 -m pip install --upgrade pip
+              
+              # Ensuring permissions for application file writing
               sudo chown -R ec2-user:ec2-user /home/ec2-user/sf-bsky-feed
-              chmod 775 /home/ec2-user/sf-bsky-feed
+              chmod -R 775 /home/ec2-user/sf-bsky-feed
               
               pip install -r requirements.txt
 

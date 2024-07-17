@@ -243,6 +243,8 @@ resource "aws_instance" "feed_server" {
               chmod -R 775 /home/ec2-user/sf-bsky-feed
               
               pip install -r requirements.txt
+              export FLASK_APP=app.py
+              export FLASK_ENV=development
 
               flask run
               EOF

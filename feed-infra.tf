@@ -159,7 +159,7 @@ resource "aws_route_table_association" "feed_route_table_association" {
 resource "aws_security_group" "feed_server_sg" {
   vpc_id = aws_vpc.feed_vpc.id
 
-# home network ssh
+  # home network ssh
   ingress {
     from_port   = 22
     to_port     = 22
@@ -167,6 +167,7 @@ resource "aws_security_group" "feed_server_sg" {
     cidr_blocks = ["24.4.37.147/32", "98.207.205.66/32", "192.168.1.100/32"]
   }
 
+  # HTTP traffic from anywhere
   ingress {
     from_port   = 80
     to_port     = 80
@@ -174,30 +175,24 @@ resource "aws_security_group" "feed_server_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-# ec2 reachable for bluesky
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  } 
-
-    ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-# http traffic for testing
+  # HTTP traffic for testing purposes
   ingress {
     from_port   = 8000
     to_port     = 8000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-  } 
+  }
 
-# ec2 access to internet ie pip install
+  # HTTPS traffic from anywhere , used by bluesky
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+
+  # Allow all outbound traffic
   egress {
     from_port   = 0
     to_port     = 0
@@ -209,6 +204,7 @@ resource "aws_security_group" "feed_server_sg" {
     Name = "feed_server_sg"
   })
 }
+
 
 resource "aws_instance" "feed_server" {
   ami                  = "ami-066f98455b59ca1ee" # Amazon Linux 2 AMI

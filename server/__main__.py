@@ -4,7 +4,7 @@ from server.logger import logger
 
 if __name__ == '__main__':
     # FOR DEBUG PURPOSE ONLY
-    # 127.0.0.1:8000
+    # can switch back to 127.0.0.1:8000
     logging.basicConfig(level=logging.DEBUG, 
                         filename='flask.log', 
                         filemode='a', 

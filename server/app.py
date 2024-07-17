@@ -67,6 +67,7 @@ def describe_feed_generator():
 @app.route('/xrpc/app.bsky.feed.getFeedSkeleton', methods=['GET'])
 def get_feed_skeleton():
     feed = request.args.get('feed', default=None, type=str)
+    feed = "at://did:plc:3gzl324dgmnpfttv7b7mddxq/app.bsky.feed.generator/san-francisco" if feed is None else feed
     algo = algos.get(feed)
     if not algo:
         return 'Unsupported algorithm', 400

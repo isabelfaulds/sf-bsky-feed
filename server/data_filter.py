@@ -26,7 +26,7 @@ def operations_callback(ops: defaultdict) -> None:
                 f': {inlined_text}'
             )
 
-        sf_coded = {'name':['san fran', 'sf', 'sfo', 'bay area', 'silicon valley', 'cerebral valley'
+        sf_coded = {'name':['san fran', 'sfo', 'bay area', 'silicon valley', 'cerebral valley'
                             ],
                     'neighborhoods': ['duboce triangle', 'castro', 'noe valley', 'potrero hill', 'soma', 'tenderloin', 'twin peaks', 'western addition', 'hayes valley', 'marina', 'pacific heights', 'presidio', 'richmond', 'inner sunset', 'outer sunset', 'north beach', 'telegraph hill', 'financial district', 'nob hill', 'russian hill', 'south beach', 'south of market', 'treasure island', 'yuerba buena island', 'alcatraz', 'angel island', 
                                       'rincoln hill'
@@ -50,15 +50,25 @@ def operations_callback(ops: defaultdict) -> None:
                 'reply_root': reply_root,
             }
             posts_to_create.append(post_dict)
+            logger.info(
+                f'NEW FEED POST '
+                f'[CREATED_AT={record.created_at}]'
+                f'[AUTHOR={author}]'
+                f'[WITH_IMAGE={post_with_images}]'
+                f'[URI={created_post['uri']}]'
+                f': {inlined_text}'
+            )
 
     posts_to_delete = ops[models.ids.AppBskyFeedPost]['deleted']
     if posts_to_delete:
         post_uris_to_delete = [post['uri'] for post in posts_to_delete]
         Post.delete().where(Post.uri.in_(post_uris_to_delete))
         logger.info(f'Deleted from feed: {len(post_uris_to_delete)}')
+        logger.info(
+                f'Added to feed: {post_dict['uri']}')
 
     if posts_to_create:
         with db.atomic():
             for post_dict in posts_to_create:
                 Post.create(**post_dict)
-        logger.info(f'Added to feed: {len(posts_to_create)}')
+        logger.info(f'Length Added to feed: {len(posts_to_create)}')

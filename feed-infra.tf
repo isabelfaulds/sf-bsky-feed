@@ -2,6 +2,11 @@ provider "aws" {
   region = "us-west-1"
 }
 
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+}
+
 variable "bsky_tags" {
   description = "Tags for all sf bsky feed resources"
   type        = map(string)
@@ -123,7 +128,7 @@ resource "aws_vpc" "feed_vpc" {
 resource "aws_subnet" "feed_subnet" {
   vpc_id            = aws_vpc.feed_vpc.id
   cidr_block        = "10.0.1.0/24"
-  availability_zone = "us-west-1a" # Adjust as needed
+  availability_zone = "us-west-1a"
 
   tags = merge(var.bsky_tags, {
     Name = "feed_subnet"
@@ -167,7 +172,6 @@ resource "aws_security_group" "feed_server_sg" {
     cidr_blocks = ["24.4.37.147/32", "98.207.205.66/32", "192.168.1.100/32"]
   }
 
-  # HTTP traffic from anywhere
   ingress {
     from_port   = 80
     to_port     = 80
@@ -175,24 +179,14 @@ resource "aws_security_group" "feed_server_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # HTTP traffic for testing purposes
+  # flask port
   ingress {
-    from_port   = 8000
-    to_port     = 8000
+    from_port   = 5000
+    to_port     = 5000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # HTTPS traffic from anywhere , used by bluesky
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-
-  # Allow all outbound traffic
   egress {
     from_port   = 0
     to_port     = 0
@@ -246,7 +240,9 @@ resource "aws_instance" "feed_server" {
               export FLASK_APP=app.py
               export FLASK_ENV=development
 
-              flask run
+              cd server
+
+              flask run --host=0.0.0.0 --port=5000
               EOF
 }
 
@@ -257,4 +253,127 @@ resource "aws_eip" "feed_server_eip" {
 
 output "feed_server_eip" {
   value = aws_eip.feed_server_eip.public_ip
+}
+
+# using an already created domain
+data "aws_route53_zone" "personal_domain" {
+  name = "isabelfaulds.com"
+}
+
+# ACM Certificates for Cloudfront live in us-east-1
+resource "aws_acm_certificate" "feed_cert" {
+  provider = aws.us_east_1 
+
+  domain_name = "isabelfaulds.com"
+  validation_method = "DNS"
+
+  # including www.
+  subject_alternative_names = [
+    "www.isabelfaulds.com"
+  ]
+
+  tags = {
+    Name = "Personal Cert"
+  }
+}
+
+# DNS Validation Record for ACM Certificate root domain
+resource "aws_route53_record" "cert_validation" {
+depends_on = [aws_acm_certificate.feed_cert]
+
+  zone_id = data.aws_route53_zone.personal_domain.zone_id
+  name    = tolist(aws_acm_certificate.feed_cert.domain_validation_options)[0].resource_record_name
+  type    = tolist(aws_acm_certificate.feed_cert.domain_validation_options)[0].resource_record_type
+  ttl     = "60"
+  records = [tolist(aws_acm_certificate.feed_cert.domain_validation_options)[0].resource_record_value]
+}
+
+# DNS Validation Record for ACM Certificate www subdomain
+resource "aws_route53_record" "cert_validation_www" {
+  depends_on = [aws_acm_certificate.feed_cert]
+
+  zone_id = data.aws_route53_zone.personal_domain.zone_id
+  name    = tolist(aws_acm_certificate.feed_cert.domain_validation_options)[1].resource_record_name
+  type    = tolist(aws_acm_certificate.feed_cert.domain_validation_options)[1].resource_record_type
+  ttl     = "60"
+  records = [tolist(aws_acm_certificate.feed_cert.domain_validation_options)[1].resource_record_value]
+}
+
+resource "aws_route53_record" "origin_record" {
+  zone_id = data.aws_route53_zone.personal_domain.zone_id
+  name    = "origin"
+  type    = "A"
+  ttl     = 300
+  records = [aws_eip.feed_server_eip.public_ip]
+}
+
+resource "aws_cloudfront_distribution" "feed_distribution" {
+  depends_on = [aws_acm_certificate.feed_cert]
+  aliases = ["isabelfaulds.com", "www.isabelfaulds.com"]
+
+  origin {
+    domain_name = "origin.isabelfaulds.com"
+    origin_id   = "EC2Origin"
+      custom_origin_config {
+      http_port = 5000
+      https_port = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols    = ["TLSv1.2"]
+      origin_read_timeout = 60
+    }
+  }
+
+  enabled          = true
+  is_ipv6_enabled  = true
+
+  default_cache_behavior {
+    allowed_methods = ["GET", "HEAD"]
+    cached_methods = ["GET", "HEAD"]
+    target_origin_id = "EC2Origin"
+
+    forwarded_values {
+      query_string = true
+      cookies {
+        forward = "none"
+      }
+    }
+
+    viewer_protocol_policy = "allow-all"
+  }
+
+  # Edges for Americas, Europe, Asia 
+  price_class = "PriceClass_200"
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  viewer_certificate {
+    acm_certificate_arn = aws_acm_certificate.feed_cert.arn
+    ssl_support_method   = "sni-only"
+  }
+
+}
+
+
+
+resource "aws_route53_record" "feed_domain" {
+  zone_id = data.aws_route53_zone.personal_domain.zone_id
+  name    = "isabelfaulds.com"
+  type    = "A"
+  alias {
+    name                   = aws_cloudfront_distribution.feed_distribution.domain_name
+    zone_id                = aws_cloudfront_distribution.feed_distribution.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+resource "aws_route53_record" "www_feed_domain" {
+  zone_id = data.aws_route53_zone.personal_domain.zone_id
+  name    = "www.isabelfaulds.com"
+  type    = "CNAME"
+  ttl     = 300
+  records = [aws_cloudfront_distribution.feed_distribution.domain_name]
 }

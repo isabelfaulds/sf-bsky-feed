@@ -55,7 +55,7 @@ def operations_callback(ops: defaultdict) -> None:
                 f'[CREATED_AT={record.created_at}]'
                 f'[AUTHOR={author}]'
                 f'[WITH_IMAGE={post_with_images}]'
-                f'[URI={created_post['uri']}]'
+                f'[URI={created_post["uri"]}]'
                 f': {inlined_text}'
             )
 
@@ -64,11 +64,10 @@ def operations_callback(ops: defaultdict) -> None:
         post_uris_to_delete = [post['uri'] for post in posts_to_delete]
         Post.delete().where(Post.uri.in_(post_uris_to_delete))
         logger.info(f'Deleted from feed: {len(post_uris_to_delete)}')
-        logger.info(
-                f'Added to feed: {post_dict['uri']}')
 
     if posts_to_create:
         with db.atomic():
             for post_dict in posts_to_create:
                 Post.create(**post_dict)
+                logger.info(f'Added to feed: {post_dict["uri"]}')
         logger.info(f'Length Added to feed: {len(posts_to_create)}')

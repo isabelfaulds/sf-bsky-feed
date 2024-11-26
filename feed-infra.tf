@@ -219,18 +219,12 @@ resource "aws_instance" "feed_server" {
               sudo yum install -y httpd git aws-cli
 
               git clone https://github.com/manyshapes/sf-bsky-feed /home/ec2-user/sf-bsky-feed
-              # May be out of date, referncing aws
-              eip=$(aws ec2 describe-addresses --filters "Name=instance-id,Values=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)" --query "Addresses[0].PublicIp" --output text --region us-west-1)
-              if grep -q "HOSTNAME=" /home/ec2-user/sf-bsky-feed/.env; then
-                sed -i "s/HOSTNAME=.*/HOSTNAME=$eip/" /home/ec2-user/sf-bsky-feed/.env
-              else
-                echo "HOSTNAME=$eip" >> /home/ec2-user/sf-bsky-feed/.env
-              fi
-
               cd /home/ec2-user/sf-bsky-feed
               sudo python3.8 -m venv venv
               source venv/bin/activate
               sudo /home/ec2-user/sf-bsky-feed/venv/bin/python3 -m pip install --upgrade pip
+              export FLASK_APP=app.py
+              export FLASK_ENV=development
               
               # Ensuring permissions for application file writing
               sudo chown -R ec2-user:ec2-user /home/ec2-user/sf-bsky-feed

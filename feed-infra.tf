@@ -220,6 +220,8 @@ resource "aws_instance" "feed_server" {
               git clone https://github.com/manyshapes/sf-bsky-feed /home/ec2-user/sf-bsky-feed
               cd /home/ec2-user/sf-bsky-feed
               sudo python3.8 -m venv venv
+              sudo chown -R ec2-user:ec2-user /home/ec2-user/sf-bsky-feed
+              chmod -R 775 /home/ec2-user/sf-bsky-feed
 
               EOF
 }

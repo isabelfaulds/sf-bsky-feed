@@ -4,6 +4,7 @@ from atproto import models
 
 from server.logger import logger
 from server.database import db, Post
+import re
 
 
 def operations_callback(ops: defaultdict) -> None:
@@ -34,10 +35,10 @@ def operations_callback(ops: defaultdict) -> None:
                     'parks': ['dolores park', 'duboce park', 'alamo square', 'mission dolores park', 'corona heights', 'glen canyon park', 'mount davidson', 'sutro heights park', 'sutro forest', 'sutro park', 'sutro baths', 'sutro sam', 'sutro tower', 'sutro tunnel', 'sutro terrace', 'sutro trail', 'sutro walk','sutro woods']}
         unnested_values = [item for sublist in sf_coded.values() for item in sublist]
 
-        sf_coded = [item for sublist in sf_coded.values() for item in sublist]
+        sf_coded = [fr'\b{item}\b' for sublist in sf_coded.values() for item in sublist]
 
 
-        if any([w in record.text.lower() for w in sf_coded]):
+        if re.search( '|'.join(sf_coded) , record.text.lower()) is not None:
             reply_root = reply_parent = None
             if record.reply:
                 reply_root = record.reply.root.uri

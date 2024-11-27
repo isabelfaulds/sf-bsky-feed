@@ -6,4 +6,4 @@ pip install -r requirements.txt
 # Ensure correct permissions for application files
 sudo chown -R ec2-user:ec2-user /home/ec2-user/sf-bsky-feed
 chmod -R 775 /home/ec2-user/sf-bsky-feed
-gunicorn -w 2 -b 0.0.0.0:5000 server.app:app
+gunicorn -w 1 -b 0.0.0.0:5000 server.app:app

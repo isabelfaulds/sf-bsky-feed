@@ -27,12 +27,21 @@ def operations_callback(ops: defaultdict) -> None:
                 f': {inlined_text}'
             )
 
-        sf_coded = {'name':['san fran', 'sfo', 'bay area', 'silicon valley', 'cerebral valley'
+        sf_coded = {'name':['san francisco', 'san fran', 'sfo', 'bay area', 'silicon valley', 'cerebral valley'
                             ],
-                    'neighborhoods': ['duboce triangle', 'castro', 'noe valley', 'potrero hill', 'soma', 'tenderloin', 'twin peaks', 'western addition', 'hayes valley', 'marina', 'pacific heights', 'presidio', 'richmond', 'inner sunset', 'outer sunset', 'north beach', 'telegraph hill', 'financial district', 'nob hill', 'russian hill', 'south beach', 'south of market', 'treasure island', 'yuerba buena island', 'alcatraz', 'angel island', 
-                                      'rincoln hill'
+                    'neighborhoods': ['duboce triangle', 'castro', 'noe valley', 'potrero hill', 'soma', 
+                                      'tenderloin', 'twin peaks', 'western addition', 'hayes valley', 
+                                      'pacific heights', 'presidio', 'richmond', 'inner sunset', 'outer sunset', 
+                                      'north beach', 'telegraph hill', 'financial district', 'nob hill', 'russian hill', 
+                                      'south beach', 'south of market'
+                                      'rincon hill'
                                       ],
-                    'parks': ['dolores park', 'duboce park', 'alamo square', 'mission dolores park', 'corona heights', 'glen canyon park', 'mount davidson', 'sutro heights park', 'sutro forest', 'sutro park', 'sutro baths', 'sutro sam', 'sutro tower', 'sutro tunnel', 'sutro terrace', 'sutro trail', 'sutro walk','sutro woods']}
+                    'parks': ['dolores park', 'duboce park', 'alamo square', 'mission dolores park', 'corona heights', 
+                              'glen canyon park', 'mount davidson', 'sutro heights park', 'sutro forest', 
+                              'sutro park', 'sutro baths', 'sutro sam', 'sutro tower', 'sutro tunnel',
+                                'sutro terrace', 'sutro trail', 'sutro walk','sutro woods','alcatraz',
+                                  'angel island','treasure island', 'yuerba buena island', 'marina green',
+                                   'golden gate bridge' ]}
         unnested_values = [item for sublist in sf_coded.values() for item in sublist]
 
         sf_coded = [fr'\b{item}\b' for sublist in sf_coded.values() for item in sublist]

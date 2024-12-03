@@ -10,3 +10,4 @@ server/algos/__pycache__
 *.ipynb
 server/feed_database.db
 .env
+terraform.tfvars

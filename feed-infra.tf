@@ -16,6 +16,14 @@ variable "bsky_tags" {
   }
 }
 
+### Variables
+
+variable "ssh_cidr_blocks" {
+  description = "List of CIDR blocks for SSH access"
+  type        = list(string) # Explicitly define as a list of strings
+}
+
+
 ### Permissions
  
 
@@ -169,7 +177,7 @@ resource "aws_security_group" "feed_server_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["24.4.37.147/32", "98.207.205.66/32", "192.168.1.100/32"]
+    cidr_blocks = var.ssh_cidr_blocks
   }
 
   ingress {

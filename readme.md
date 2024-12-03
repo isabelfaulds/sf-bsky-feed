@@ -33,9 +33,8 @@ Amazon Linux 2 bird delivering the feed
     - 1 subnet
     - 1 security group
 - ec2 instance
-    - starting with t3 medium for reading 1 million posts a day on bluesky [jazco bluesky stats](https://bsky.jazco.dev/stats)
-    - Will continue monitoring / update based on utilization
-    - Recommend changing ami to amazon linux 2023
+    - testing with t3 medium
+    - stats on bluesky posts [jazco bluesky stats](https://bsky.jazco.dev/stats)
 - acm
 - route 53
 - cloudfront
@@ -43,11 +42,10 @@ Amazon Linux 2 bird delivering the feed
 - monitoring
 - terraform outputs: feed_server_eip 
 
-
-
-
 ## Things to Change
 - Update terraform.tfvars.example to terraform.tfvars , include [your ip address for ssh](https://whatismyipaddress.com/)
+- Update filtering logic in data_filter.py
+- Update route 53 zone to a usable domain
 
 ## Debugging Checks
 If any issues some key things to check for debugging :-)
